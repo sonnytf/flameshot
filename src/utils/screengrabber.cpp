@@ -115,24 +115,8 @@ ScreenGrabber::PortalStatus ScreenGrabber::freeDesktopPortal(
     });
     timeout.start();
 
-    // Build a non-empty parent_window handle. xdg-desktop-portal-gnome
-    // (>= 46) rejects an empty string with "Failed to associate portal
-    // window with parent window ''" and the Screenshot request fails.
-    // On X11 we pass a real x11:<hex> handle from an offscreen QWidget.
-    // On Wayland we fall back to an empty string inside a wayland: prefix
-    // (xdg-desktop-portal-gnome treats unknown handles as no-parent and
-    // proceeds, instead of rejecting outright).
-    QString parentWindow;
-    QWidget parentDummy;
-    parentDummy.setAttribute(Qt::WA_DontShowOnScreen, true);
-    parentDummy.resize(1, 1);
-    parentDummy.show();
-    if (QGuiApplication::platformName() == QLatin1String("wayland")) {
-        parentWindow = QStringLiteral("wayland:");
-    } else {
-        parentWindow =
-          QStringLiteral("x11:0x%1").arg(parentDummy.winId(), 0, 16);
-    }
+    // Build a non-empty parent_window handle for xdg-desktop-portal-gnome.
+    QString parentWindow = QStringLiteral("wayland:");
 
     QDBusMessage reply = screenshotInterface.call(
       QStringLiteral("Screenshot"),
@@ -163,8 +147,7 @@ ScreenGrabber::PortalStatus ScreenGrabber::freeDesktopPortal(
           tr("The xdg-desktop-portal backend did not respond "
              "If you are on wayland make sure an xdg-desktop-portal backend "
              "for your desktop is "
-             "installed and properly configured.\n \n"
-             "If on X11 enable Legacy X11 method in the General Settings");
+             "installed and properly configured.");
         return PortalStatus::Failed;
     }
 
@@ -190,29 +173,9 @@ QPixmap ScreenGrabber::unixScreenshot(bool& ok)
 {
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
     QPixmap screenshot;
-
-    if (!m_info.waylandDetected() && ConfigHandler().useX11LegacyScreenshot()) {
-        screenshot = x11LegacyScreenshot();
-        ok = !screenshot.isNull();
-        if (!ok) {
-            AbstractLogger::error() << tr("Unable to capture screen");
-        }
-        return screenshot;
-    }
-
     QString portalError;
     const PortalStatus status = freeDesktopPortal(screenshot, portalError);
     ok = status == PortalStatus::Success;
-
-    if (status == PortalStatus::Unavailable && !m_info.waylandDetected()) {
-        // The portal cannot take screenshots here, which is common on X11
-        // window managers such as i3 or XMonad, so take the native X11
-        // grab instead.
-        AbstractLogger::info(AbstractLogger::Stderr | AbstractLogger::LogFile)
-          << tr("Screenshot portal unavailable, using direct X11 capture");
-        screenshot = x11LegacyScreenshot();
-        ok = !screenshot.isNull();
-    }
 
     if (!ok) {
         if (!portalError.isEmpty()) {
@@ -242,26 +205,6 @@ QPixmap ScreenGrabber::selectMonitorAndCrop(const QPixmap& fullScreenshot,
     const QList<QScreen*> screens = QGuiApplication::screens();
     if (screens.size() == 1) {
         return cropToMonitor(fullScreenshot, 0);
-    }
-
-    // Capture Active Monitor: auto-select monitor under cursor
-    if (ConfigHandler().captureActiveMonitor()) {
-        if (m_info.waylandDetected()) {
-            AbstractLogger::error()
-              << tr("Capture Active Monitor is not supported on Wayland due to "
-                    "Wayland security model.");
-            ok = false;
-            return QPixmap();
-        }
-
-        QGuiAppCurrentScreen screenFinder;
-        QScreen* cursorScreen = screenFinder.currentScreen();
-        int monitorIndex = screens.indexOf(cursorScreen);
-        if (monitorIndex >= 0) {
-            m_selectedMonitor = monitorIndex;
-            return cropToMonitor(fullScreenshot, monitorIndex);
-        }
-        // Fall through to manual selection if screen lookup fails
     }
 
     if (m_monitorSelectionActive) {
@@ -385,12 +328,7 @@ QPixmap ScreenGrabber::grabFullDesktop(bool& ok)
 
 QRect ScreenGrabber::screenGeometry(QScreen* screen)
 {
-    QRect geometry = screen->geometry();
-    if (m_info.waylandDetected()) {
-        QPoint topLeft(0, 0);
-        geometry.moveTo(geometry.topLeft() - topLeft);
-    }
-    return geometry;
+    return screen->geometry();
 }
 
 QPixmap ScreenGrabber::grabScreen(QScreen* screen, bool& ok)
@@ -849,47 +787,6 @@ QPixmap ScreenGrabber::windowsScreenshot(int wid)
     for (QScreen* screen : screens) {
         const ScreenInfo& info = screenInfos[screen];
         painter.drawPixmap(info.physicalRect.topLeft(), info.pixmap);
-    }
-    painter.end();
-
-    return desktop;
-}
-
-QPixmap ScreenGrabber::x11LegacyScreenshot()
-{
-    const QList<QScreen*> screens = QGuiApplication::screens();
-
-    if (screens.isEmpty()) {
-        return QPixmap();
-    }
-
-    if (screens.size() == 1) {
-        QScreen* screen = screens.first();
-        QPixmap p = screen->grabWindow(0);
-        p.setDevicePixelRatio(screen->devicePixelRatio());
-        return p;
-    }
-
-    // Composite all screens using logical geometry.
-    // On i3 (tested) DPR is uniform so we don't need the per-screen
-    // physical pixel math that the Windows backend does. Not sure if this is
-    // true for other DE's like xmonad.
-    QRect totalGeom;
-    for (QScreen* s : screens) {
-        totalGeom = totalGeom.united(s->geometry());
-    }
-
-    qreal dpr = screens.first()->devicePixelRatio();
-    QPixmap desktop(qRound(totalGeom.width() * dpr),
-                    qRound(totalGeom.height() * dpr));
-    desktop.setDevicePixelRatio(dpr);
-    desktop.fill(Qt::black);
-
-    QPainter painter(&desktop);
-    for (QScreen* s : screens) {
-        QPixmap p = s->grabWindow(0);
-        QPoint offset = s->geometry().topLeft() - totalGeom.topLeft();
-        painter.drawPixmap(offset, p);
     }
     painter.end();
 

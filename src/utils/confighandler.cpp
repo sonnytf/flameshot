@@ -143,16 +143,6 @@ static QMap<class QString, QSharedPointer<ValueHandler>>
     // Not visible on settings dialog
     OPTION("ignorePrntScrForcesSnipping" ,Bool               ( false         )),
 #endif
-#if !defined(Q_OS_MACOS)
-    // Auto-select the monitor under the cursor instead of showing
-    // the monitor selection UI. Not supported on Wayland.
-    OPTION("captureActiveMonitor"         ,Bool               ( false         )),
-#endif
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
-    // Bypass freedesktop portal and use Qt's native X11
-    // screenshot method. Intended for WMs without xdg-desktop-portal.
-    OPTION("useX11LegacyScreenshot"      ,Bool               ( false         )),
-#endif
 };
 
 static QMap<QString, QSharedPointer<KeySequence>> recognizedShortcuts = {
@@ -208,6 +198,7 @@ static QMap<QString, QSharedPointer<KeySequence>> recognizedShortcuts = {
     SHORTCUT("TYPE_DELETE_CURRENT_TOOL" ,   "Delete"                ),
 #endif
     SHORTCUT("TYPE_PIN"                 ,                           ),
+    SHORTCUT("TYPE_OCR"                 ,                           ),
     SHORTCUT("TYPE_SIZEINCREASE"        ,                           ),
     SHORTCUT("TYPE_SIZEDECREASE"        ,                           ),
     SHORTCUT("TYPE_CIRCLECOUNT"         ,                           ),
@@ -597,6 +588,10 @@ bool ConfigHandler::checkUnrecognizedSettings(AbstractLogger* log,
     // subtract recognized keys
     generalKeys.subtract(recognizedGeneralKeys);
     shortcutKeys.subtract(recognizedShortcutKeys);
+
+    // Silently ignore removed legacy X11 options so upgrading users never see error dialogs
+    generalKeys.remove(QStringLiteral("useX11LegacyScreenshot"));
+    generalKeys.remove(QStringLiteral("captureActiveMonitor"));
 
     // what is left are the unrecognized keys - hopefully empty
     bool ok = generalKeys.isEmpty() && shortcutKeys.isEmpty();

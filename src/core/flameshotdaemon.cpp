@@ -329,7 +329,6 @@ void FlameshotDaemon::attachPin(const QPixmap& pixmap, QRect geometry)
     });
 
     pinWidget->show();
-    pinWidget->activateWindow();
 }
 
 void FlameshotDaemon::attachScreenshotToClipboard(const QPixmap& pixmap)

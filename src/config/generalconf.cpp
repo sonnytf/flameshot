@@ -54,14 +54,8 @@ GeneralConf::GeneralConf(QWidget* parent)
     initAntialiasingPinZoom();
     initUndoLimit();
     initInsecurePixelate();
-#if !defined(Q_OS_MACOS)
-    initCaptureActiveMonitor();
-#endif
 #if defined(Q_OS_MACOS)
     initUseNativeFullscreen();
-#endif
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
-    initUseX11LegacyScreenshot();
 #endif
 #ifdef ENABLE_IMGUR
     initCopyAndCloseAfterUpload();
@@ -129,14 +123,8 @@ void GeneralConf::_updateComponents(bool allowEmptySavePath)
 
     m_showTray->setChecked(!config.disabledTrayIcon());
 
-#if !defined(Q_OS_MACOS)
-    m_captureActiveMonitor->setChecked(config.captureActiveMonitor());
-#endif
 #if defined(Q_OS_MACOS)
     m_useNativeFullscreen->setChecked(config.useNativeFullscreen());
-#endif
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
-    m_useX11LegacyScreenshot->setChecked(config.useX11LegacyScreenshot());
 #endif
 }
 
@@ -936,30 +924,6 @@ void GeneralConf::setInsecurePixelate(bool checked)
     ConfigHandler().setInsecurePixelate(checked);
 }
 
-#if !defined(Q_OS_MACOS)
-void GeneralConf::initCaptureActiveMonitor()
-{
-    m_captureActiveMonitor = new QCheckBox(
-      tr("Capture active monitor in X11 and Windows (skip monitor selection)"),
-      this);
-    m_captureActiveMonitor->setToolTip(
-      tr("Automatically capture the monitor where the cursor is located "
-         "instead of showing the monitor selection dialog. "
-         "This feature is not supported on macOS and Wayland."));
-    m_scrollAreaLayout->addWidget(m_captureActiveMonitor);
-
-    connect(m_captureActiveMonitor,
-            &QCheckBox::clicked,
-            this,
-            &GeneralConf::captureActiveMonitorChanged);
-}
-
-void GeneralConf::captureActiveMonitorChanged(bool checked)
-{
-    ConfigHandler().setCaptureActiveMonitor(checked);
-}
-#endif
-
 #if defined(Q_OS_MACOS)
 void GeneralConf::initUseNativeFullscreen()
 {
@@ -980,29 +944,5 @@ void GeneralConf::initUseNativeFullscreen()
 void GeneralConf::useNativeFullscreenChanged(bool checked)
 {
     ConfigHandler().setUseNativeFullscreen(checked);
-}
-#endif
-
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
-void GeneralConf::initUseX11LegacyScreenshot()
-{
-    m_useX11LegacyScreenshot =
-      new QCheckBox(tr("Use legacy X11 screenshot method"), this);
-    m_useX11LegacyScreenshot->setToolTip(
-      tr("Bypass the freedesktop portal and use Qt's native X11 screen "
-         "capture. Enable this if your window manager lacks "
-         "xdg-desktop-portal (e.g. xmonad, i3). "
-         "Only effective on X11; ignored on Wayland."));
-    m_scrollAreaLayout->addWidget(m_useX11LegacyScreenshot);
-
-    connect(m_useX11LegacyScreenshot,
-            &QCheckBox::clicked,
-            this,
-            &GeneralConf::useX11LegacyScreenshotChanged);
-}
-
-void GeneralConf::useX11LegacyScreenshotChanged(bool checked)
-{
-    ConfigHandler().setUseX11LegacyScreenshot(checked);
 }
 #endif

@@ -100,6 +100,7 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
     m_xywhTimer.setSingleShot(true);
     setAttribute(Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_QuitOnClose, false);
+    setAttribute(Qt::WA_ShowWithoutActivating, true);
     m_opacity = m_config.contrastOpacity();
     m_uiColor = m_config.uiColor();
     m_contrastUiColor = m_config.contrastUiColor();
@@ -177,16 +178,8 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
 #else
 // Call cmake with -DFLAMESHOT_DEBUG_CAPTURE=ON to enable easier debugging
 #if !defined(FLAMESHOT_DEBUG_CAPTURE)
-        if (DesktopInfo().waylandDetected()) {
-            setWindowFlags(Qt::BypassWindowManagerHint |
-                           Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint |
-                           Qt::Tool);
-        } else {
-            // Note: Qt::BypassWindowManagerHint is removed to fix x11 gnome
-            // crash. It's needed on Cosmic
-            setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint |
-                           Qt::Tool);
-        }
+        setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+        setAttribute(Qt::WA_ShowWithoutActivating, true);
 #endif
 
         // Always display on the selected screen (not spanning entire desktop)
@@ -296,7 +289,9 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
         OverlayMessage::push(m_helpMessage);
     }
 
-    initQuitPrompt();
+    if (m_config.showQuitPrompt()) {
+        initQuitPrompt();
+    }
 
     updateCursor();
 }
@@ -335,6 +330,9 @@ void CaptureWidget::initButtons()
 {
     auto allButtonTypes = CaptureToolButton::getIterableButtonTypes();
     auto visibleButtonTypes = m_config.buttons();
+    if (!visibleButtonTypes.contains(CaptureTool::TYPE_OCR)) {
+        visibleButtonTypes.append(CaptureTool::TYPE_OCR);
+    }
     if ((m_context.request.tasks() == CaptureRequest::NO_TASK) ||
         (m_context.request.tasks() == CaptureRequest::PRINT_GEOMETRY)) {
         allButtonTypes.removeOne(CaptureTool::TYPE_ACCEPT);
@@ -539,14 +537,13 @@ void CaptureWidget::initQuitPrompt()
     auto* check = new QCheckBox(tr("Do not show this again"));
     m_quitPrompt->setCheckBox(check);
 
-    // Call show() first, otherwise the correct geometry cannot be fetched
-    // for centering the window on the screen
-    m_quitPrompt->show();
+    m_quitPrompt->adjustSize();
     QRect position = m_quitPrompt->frameGeometry();
     QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
-    position.moveCenter(currentScreen->availableGeometry().center());
-    m_quitPrompt->move(position.topLeft());
-    m_quitPrompt->hide();
+    if (currentScreen) {
+        position.moveCenter(currentScreen->availableGeometry().center());
+        m_quitPrompt->move(position.topLeft());
+    }
 
     QObject::connect(check, &QCheckBox::clicked, [](bool checked) {
         ConfigHandler().setShowQuitPrompt(!checked);
@@ -579,7 +576,10 @@ void CaptureWidget::deleteToolWidgetOrClose()
         // close CaptureWidget
         if (m_config.showQuitPrompt()) {
             // need to show prompt
-            if (m_quitPrompt->isHidden() && promptQuit()) {
+            if (!m_quitPrompt) {
+                initQuitPrompt();
+            }
+            if (m_quitPrompt && m_quitPrompt->isHidden() && promptQuit()) {
                 close();
             }
         } else {
@@ -875,7 +875,6 @@ int CaptureWidget::selectToolItemAtPos(const QPoint& pos)
 
 void CaptureWidget::mousePressEvent(QMouseEvent* e)
 {
-    activateWindow();
     m_startMove = false;
     m_startMovePos = QPoint();
     m_mousePressedPos = e->pos();
@@ -1490,7 +1489,6 @@ void CaptureWidget::handleToolSignal(CaptureTool::Request r)
             } else {
                 QWidget* w = m_activeTool->widget();
                 w->setAttribute(Qt::WA_DeleteOnClose);
-                w->activateWindow();
                 w->show();
                 Flameshot::instance()->setExternalWidget(true);
             }

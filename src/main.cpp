@@ -214,7 +214,6 @@ void reinitializeAsQApplication(int& argc,
 
 int main(int argc, char* argv[])
 {
-
     QTranslator translator, qtTranslator;
 
     // Required for saving button list QList<CaptureTool::Type>

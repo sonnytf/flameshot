@@ -271,11 +271,7 @@ void saveToClipboard(const QPixmap& capture)
         saveToClipboardMime(capture, "jpeg");
     } else {
 #if defined(Q_OS_UNIX)
-        if (DesktopInfo().waylandDetected()) {
-            saveToClipboardMime(capture, "png");
-        } else {
-            QApplication::clipboard()->setPixmap(capture);
-        }
+        saveToClipboardMime(capture, "png");
 #else
         QApplication::clipboard()->setPixmap(capture);
 #endif

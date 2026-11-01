@@ -51,7 +51,6 @@ private:
     void setHighlightedMonitorPreview(int previewIndex);
     QPixmap cropToMonitor(const QPixmap& fullScreenshot, int monitorIndex);
     QPixmap windowsScreenshot(int wid);
-    QPixmap x11LegacyScreenshot();
     QPixmap unixScreenshot(bool& ok);
 
     DesktopInfo m_info;

@@ -70,10 +70,8 @@ TrayIcon::TrayIcon(QObject* parent)
     });
 #endif
 
-#ifdef Q_OS_WIN
-    // Ensure proper removal of tray icon when program quits on Windows.
+    // Ensure proper removal of tray icon when program quits.
     connect(qApp, &QCoreApplication::aboutToQuit, this, &TrayIcon::hide);
-#endif
 
     show(); // TODO needed?
 
@@ -174,7 +172,10 @@ void TrayIcon::initMenu()
 #endif
 
     QAction* quitAction = new QAction(tr("&Quit"), this);
-    connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+    connect(quitAction, &QAction::triggered, this, [this]() {
+        hide();
+        QTimer::singleShot(50, qApp, &QCoreApplication::quit);
+    });
 
 #ifdef ENABLE_IMGUR
     // recent screenshots

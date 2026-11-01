@@ -51,8 +51,6 @@ ShortcutsWidget::ShortcutsWidget(QWidget* parent)
 #if defined(Q_OS_WIN)
     initMsScreenclipCheckbox();
 #endif
-
-    show();
 }
 
 void ShortcutsWidget::initInfoTable()

@@ -10,6 +10,7 @@ class QVBoxLayout;
 class QGestureEvent;
 class QPinchGesture;
 class QGraphicsDropShadowEffect;
+class QGraphicsOpacityEffect;
 
 class PinWidget : public QWidget
 {
@@ -20,8 +21,11 @@ public:
                        QWidget* parent = nullptr);
 
 protected:
+    void mouseDoubleClickEvent(QMouseEvent*) override;
     void mousePressEvent(QMouseEvent*) override;
     void mouseMoveEvent(QMouseEvent*) override;
+    void mouseReleaseEvent(QMouseEvent*) override;
+    void resizeEvent(QResizeEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
     void enterEvent(QEnterEvent*) override;
     void leaveEvent(QEvent*) override;
@@ -34,6 +38,8 @@ private:
     bool scrollEvent(QWheelEvent* e);
     void pinchTriggered(QPinchGesture*);
     void closePin();
+    void startFileDrag(bool keepOpen = false);
+    void updateDragBadgePosition();
 
     void rotateLeft();
     void rotateRight();
@@ -46,6 +52,11 @@ private:
     QLabel* m_label;
     QGraphicsDropShadowEffect* m_shadowEffect;
     QColor m_baseColor, m_hoverColor;
+    QLabel* m_dragBadge{ nullptr };
+    QGraphicsOpacityEffect* m_labelOpacityEffect{ nullptr };
+    bool m_pendingFileDrag{ false };
+    QPoint m_dragStartPos;
+    QPoint m_dragPosition;
 
     bool m_expanding{ false };
     qreal m_scaleFactor{ 1 };

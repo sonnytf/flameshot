@@ -94,7 +94,6 @@ QIcon CaptureToolButton::icon() const
 
 void CaptureToolButton::mousePressEvent(QMouseEvent* e)
 {
-    activateWindow();
     if (e->button() == Qt::LeftButton) {
         emit pressedButtonLeftClick(this);
         emit pressed();
@@ -147,13 +146,14 @@ static std::map<CaptureTool::Type, int> buttonTypeOrder
       { CaptureTool::TYPE_ACCEPT, 18 },
 #if !defined(Q_OS_MACOS)
       { CaptureTool::TYPE_OPEN_APP, 19 }, { CaptureTool::TYPE_EXIT, 20 },
-      { CaptureTool::TYPE_PIN, 21 },
+      { CaptureTool::TYPE_PIN, 21 }, { CaptureTool::TYPE_OCR, 22 },
 #else
       { CaptureTool::TYPE_EXIT, 19 }, { CaptureTool::TYPE_PIN, 20 },
+      { CaptureTool::TYPE_OCR, 21 },
 #endif
 
-      { CaptureTool::TYPE_SIZEINCREASE, 22 },
-      { CaptureTool::TYPE_SIZEDECREASE, 23 },
+      { CaptureTool::TYPE_SIZEINCREASE, 23 },
+      { CaptureTool::TYPE_SIZEDECREASE, 24 },
 };
 
 int CaptureToolButton::getPriorityByButton(CaptureTool::Type b)
@@ -179,6 +179,7 @@ QList<CaptureTool::Type> CaptureToolButton::iterableButtonTypes = {
 #if !defined(Q_OS_MACOS)
     CaptureTool::TYPE_OPEN_APP,
 #endif
-    CaptureTool::TYPE_PIN,           CaptureTool::TYPE_SIZEINCREASE,
-    CaptureTool::TYPE_SIZEDECREASE,  CaptureTool::TYPE_ACCEPT,
+    CaptureTool::TYPE_PIN,           CaptureTool::TYPE_OCR,
+    CaptureTool::TYPE_SIZEINCREASE,  CaptureTool::TYPE_SIZEDECREASE,
+    CaptureTool::TYPE_ACCEPT,
 };

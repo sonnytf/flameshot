@@ -178,8 +178,12 @@ CaptureWidget* Flameshot::gui(const CaptureRequest& req)
         m_captureWindow->activateWindow();
         m_captureWindow->raise();
 #else
-        m_captureWindow->showFullScreen();
-//        m_captureWindow->show(); // For CaptureWidget Debugging under Linux
+        m_captureWindow->setWindowState(Qt::WindowFullScreen);
+        m_captureWindow->show();
+        if (qEnvironmentVariableIsSet("XDG_ACTIVATION_TOKEN") ||
+            qEnvironmentVariableIsSet("DESKTOP_STARTUP_ID")) {
+            m_captureWindow->activateWindow();
+        }
 #endif
         return m_captureWindow;
     } else {
@@ -509,7 +513,6 @@ void Flameshot::exportCapture(const QPixmap& capture,
 
         ImgUploaderBase* widget = ImgUploaderManager().uploader(capture);
         widget->show();
-        widget->activateWindow();
         // NOTE: lambda can't capture 'this' because it might be destroyed later
         CR::ExportTask tasks = tasks;
         QObject::connect(
