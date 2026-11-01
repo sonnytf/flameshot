@@ -123,15 +123,44 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
         } else {
             preSelectedMonitor = -1;
         }
-        m_context.screenshot =
-          grabber.grabEntireDesktop(ok, preSelectedMonitor);
+        if (req.isWindowSelection()) {
+            m_context.screenshot = grabber.grabWindowInteractive(ok);
+        } else {
+            m_context.screenshot =
+              grabber.grabEntireDesktop(ok, preSelectedMonitor);
+        }
         if (!ok) {
             // Error already logged in ScreenGrabber
             this->close();
         }
-        m_context.origScreenshot = m_context.screenshot;
-
         selectedScreen = grabber.getSelectedScreen();
+        if (req.isWindowSelection() || selectedScreen == nullptr) {
+            selectedScreen = QGuiAppCurrentScreen().currentScreen();
+            if (selectedScreen == nullptr) {
+                selectedScreen = QGuiApplication::primaryScreen();
+            }
+        }
+        if (req.isWindowSelection() && !m_context.screenshot.isNull()) {
+            qreal dpr = selectedScreen ? selectedScreen->devicePixelRatio() : 1.0;
+            QSize targetPhysicalSize = selectedScreen ? (selectedScreen->geometry().size() * dpr) : m_context.screenshot.size();
+            QPixmap canvas(targetPhysicalSize);
+            canvas.setDevicePixelRatio(dpr);
+            canvas.fill(QColor(15, 15, 15, 230));
+
+            QPainter p(&canvas);
+            int winW = m_context.screenshot.width() / m_context.screenshot.devicePixelRatio();
+            int winH = m_context.screenshot.height() / m_context.screenshot.devicePixelRatio();
+            int screenLogicalW = selectedScreen ? selectedScreen->geometry().width() : winW;
+            int screenLogicalH = selectedScreen ? selectedScreen->geometry().height() : winH;
+            int posX = qMax(0, (screenLogicalW - winW) / 2);
+            int posY = qMax(0, (screenLogicalH - winH) / 2);
+            p.drawPixmap(posX, posY, m_context.screenshot);
+            p.end();
+
+            m_context.screenshot = canvas;
+            m_context.request.setInitialSelection(QRect(posX * dpr, posY * dpr, winW * dpr, winH * dpr));
+        }
+        m_context.origScreenshot = m_context.screenshot;
 
 #if defined(Q_OS_WIN)
 #if !defined(FLAMESHOT_DEBUG_CAPTURE)
@@ -1425,7 +1454,9 @@ void CaptureWidget::initSelection()
             OverlayMessage::push(m_helpMessage);
         }
     });
-    if (!initialSelection.isNull()) {
+    if (m_context.request.isFullScreenSelection() && initialSelection.isNull()) {
+        initialSelection = rect();
+    } else if (!initialSelection.isNull()) {
         const qreal scale = m_context.screenshot.devicePixelRatio();
         initialSelection.setTop(initialSelection.top() / scale);
         initialSelection.setBottom(initialSelection.bottom() / scale);

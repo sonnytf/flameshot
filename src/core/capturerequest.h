@@ -52,6 +52,10 @@ public:
     void setSelectedMonitor(int monitorIndex);
     int selectedMonitor() const;
     bool hasSelectedMonitor() const;
+    void setFullScreenSelection(bool fullScreen);
+    bool isFullScreenSelection() const;
+    void setWindowSelection(bool windowSelection);
+    bool isWindowSelection() const;
 
 private:
     CaptureMode m_mode;
@@ -62,6 +66,8 @@ private:
     QRect m_pinWindowGeometry, m_initialSelection;
     int m_selectedMonitor;
     bool m_hasSelectedMonitor;
+    bool m_fullScreenSelection;
+    bool m_windowSelection;
 
     CaptureRequest() {}
 };

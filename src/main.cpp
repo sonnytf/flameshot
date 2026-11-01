@@ -362,6 +362,21 @@ int main(int argc, char* argv[])
     CommandOption editOption(
       { "e", "edit" },
       QObject::tr("Interactively select and edit the screenshot region"));
+    CommandOption guiFullOption(
+      QStringLiteral("full"),
+      QObject::tr("Preselect the entire screen in GUI mode."));
+    CommandOption guiWindowOption(
+      { "w", "windows", "window" },
+      QObject::tr("Capture a window and open in GUI mode."));
+    CommandArgument guiFullArgument(
+      QStringLiteral("full"),
+      QObject::tr("Preselect the entire screen in GUI mode."));
+    CommandArgument guiWindowArgument(
+      QStringLiteral("windows"),
+      QObject::tr("Capture a window and open in GUI mode."));
+    CommandArgument guiWindowAliasArgument(
+      QStringLiteral("window"),
+      QObject::tr("Capture a window and open in GUI mode."));
 
     // Add checkers
     auto colorChecker = [](const QString& colorCode) -> bool {
@@ -427,6 +442,9 @@ int main(int argc, char* argv[])
 
     // Relationships
     parser.AddArgument(guiArgument);
+    parser.AddArgument(guiFullArgument, guiArgument);
+    parser.AddArgument(guiWindowArgument, guiArgument);
+    parser.AddArgument(guiWindowAliasArgument, guiArgument);
     parser.AddArgument(screenArgument);
     parser.AddArgument(fullArgument);
     parser.AddArgument(launcherArgument);
@@ -441,8 +459,36 @@ int main(int argc, char* argv[])
                         rawImageOption,
                         selectionOption,
                         pinOption,
-                        acceptOnSelectOption },
+                        acceptOnSelectOption,
+                        guiFullOption,
+                        guiWindowOption },
                       guiArgument);
+    parser.AddOptions({ pathOption,
+                        clipboardOption,
+                        delayOption,
+                        regionOption,
+                        useLastRegionOption,
+                        rawImageOption,
+                        selectionOption,
+                        pinOption,
+                        acceptOnSelectOption },
+                      guiFullArgument);
+    parser.AddOptions({ pathOption,
+                        clipboardOption,
+                        delayOption,
+                        rawImageOption,
+                        selectionOption,
+                        pinOption,
+                        acceptOnSelectOption },
+                      guiWindowArgument);
+    parser.AddOptions({ pathOption,
+                        clipboardOption,
+                        delayOption,
+                        rawImageOption,
+                        selectionOption,
+                        pinOption,
+                        acceptOnSelectOption },
+                      guiWindowAliasArgument);
     parser.AddOptions({ screenNumberOption,
                         editOption,
                         clipboardOption,
@@ -508,7 +554,15 @@ int main(int argc, char* argv[])
         bool printGeometry = parser.isSet(selectionOption);
         bool pin = parser.isSet(pinOption);
         bool acceptOnSelect = parser.isSet(acceptOnSelectOption);
+        bool fullGui = parser.isSet(guiFullOption) || parser.isSet(guiFullArgument);
+        bool windowGui = parser.isSet(guiWindowOption) || parser.isSet(guiWindowArgument) || parser.isSet(guiWindowAliasArgument);
         CaptureRequest req(CaptureRequest::GRAPHICAL_MODE, delay, path);
+        if (fullGui) {
+            req.setFullScreenSelection(true);
+        }
+        if (windowGui) {
+            req.setWindowSelection(true);
+        }
         if (!region.isEmpty()) {
             auto selectionRegion = Region().value(region).toRect();
             req.setInitialSelection(selectionRegion);

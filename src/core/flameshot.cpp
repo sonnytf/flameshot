@@ -128,6 +128,8 @@ CaptureWidget* Flameshot::gui(const CaptureRequest& req)
 
     CaptureRequest request = req;
     if (request.captureMode() == CaptureRequest::GRAPHICAL_MODE &&
+        !request.isFullScreenSelection() &&
+        !request.isWindowSelection() &&
         request.initialSelection().isNull() &&
         ConfigHandler().saveLastRegion()) {
         request.setInitialSelection(getLastRegion());

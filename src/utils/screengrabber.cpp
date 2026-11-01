@@ -54,7 +54,8 @@ ScreenGrabber::ScreenGrabber(QObject* parent)
 
 ScreenGrabber::PortalStatus ScreenGrabber::freeDesktopPortal(
   QPixmap& res,
-  QString& errorDetail)
+  QString& errorDetail,
+  bool interactive)
 {
 
 #if !(defined(Q_OS_MACOS) || defined(Q_OS_WIN))
@@ -108,7 +109,7 @@ ScreenGrabber::PortalStatus ScreenGrabber::freeDesktopPortal(
     bool timedOut = false;
     QTimer timeout;
     timeout.setSingleShot(true);
-    timeout.setInterval(15000); // 15 second timeout
+    timeout.setInterval(interactive ? 300000 : 15000); // 5 min for user interaction, 15 sec for direct capture
 
     QObject::connect(&timeout, &QTimer::timeout, &loop, [&loop, &timedOut]() {
         timedOut = true;
@@ -123,7 +124,7 @@ ScreenGrabber::PortalStatus ScreenGrabber::freeDesktopPortal(
       QStringLiteral("Screenshot"),
       parentWindow,
       QMap<QString, QVariant>({ { "handle_token", QVariant(token) },
-                                { "interactive", QVariant(false) } }));
+                                { "interactive", QVariant(interactive) } }));
 
     if (reply.type() == QDBusMessage::ErrorMessage) {
         // No backend provides org.freedesktop.portal.Screenshot (or the
@@ -189,6 +190,25 @@ QPixmap ScreenGrabber::unixScreenshot(bool& ok)
 #else
     ok = false;
     return QPixmap();
+#endif
+}
+
+QPixmap ScreenGrabber::grabWindowInteractive(bool& ok)
+{
+#if !(defined(Q_OS_MACOS) || defined(Q_OS_WIN))
+    QPixmap screenshot;
+    QString portalError;
+    const PortalStatus status = freeDesktopPortal(screenshot, portalError, true);
+    ok = (status == PortalStatus::Success && !screenshot.isNull());
+    if (!ok) {
+        if (!portalError.isEmpty()) {
+            AbstractLogger::error() << portalError;
+        }
+        AbstractLogger::info() << tr("Window capture cancelled or failed");
+    }
+    return screenshot;
+#else
+    return grabFullDesktop(ok);
 #endif
 }
 

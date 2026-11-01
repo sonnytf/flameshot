@@ -16,6 +16,8 @@ CaptureRequest::CaptureRequest(CaptureRequest::CaptureMode mode,
   , m_data(std::move(data))
   , m_selectedMonitor(-1)
   , m_hasSelectedMonitor(false)
+  , m_fullScreenSelection(false)
+  , m_windowSelection(false)
 {}
 
 CaptureRequest::CaptureMode CaptureRequest::captureMode() const
@@ -92,4 +94,24 @@ int CaptureRequest::selectedMonitor() const
 bool CaptureRequest::hasSelectedMonitor() const
 {
     return m_hasSelectedMonitor;
+}
+
+void CaptureRequest::setFullScreenSelection(bool fullScreen)
+{
+    m_fullScreenSelection = fullScreen;
+}
+
+bool CaptureRequest::isFullScreenSelection() const
+{
+    return m_fullScreenSelection;
+}
+
+void CaptureRequest::setWindowSelection(bool windowSelection)
+{
+    m_windowSelection = windowSelection;
+}
+
+bool CaptureRequest::isWindowSelection() const
+{
+    return m_windowSelection;
 }
