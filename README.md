@@ -3,9 +3,9 @@
     <h1>
       <img src="data/img/app/org.flameshot.Flameshot.svg" alt="Flameshot" width="64" height="64" />
       <br />
-      Flameshot (Ubuntu 26.04+ Wayland Edition)
+      Flameshot (Enhanced Cross-Platform & Wayland Edition)
     </h1>
-    <h4>Floating [Drag Me] pin, offline OCR toolbar, pure Wayland stack & zero spinning cursor.</h4>
+    <h4>Floating [Drag Me] pin, offline OCR toolbar, dynamic resize handles, DPR scaling, pure Wayland stack & zero spinning cursor.</h4>
     <p>
       <b>English</b> · <a href="./README.zh-TW.md">繁體中文</a>
     </p>
@@ -16,9 +16,11 @@
 
 ## 1. Project Overview
 
-This is a customized, production-tuned fork of **Flameshot** engineered specifically for **Ubuntu 26.04 LTS (and newer) under GNOME Wayland**.
+This is an enhanced, production-tuned **Cross-Platform (Windows, macOS, and Linux Pure Wayland)** edition of **Flameshot**.
 
-Standard upstream Flameshot builds on modern Wayland desktops suffer from spinning busy cursors on capture launch/exit, missing drag-and-drop workflows for pinned screenshots, lack of integrated OCR, and clipboard data loss when short-lived GUI processes terminate. This edition solves these challenges by transitioning to a pure Wayland architecture, stripping legacy X11 code paths, and introducing streamlined drag-and-drop and offline OCR workflows.
+It delivers interactive annotation resize handles, floating `[Drag Me]` pin-and-drop workflows, an integrated native offline `[OCR]` toolbar, pixel-accurate DPR multi-monitor scaling, and a pure Wayland architecture for modern Linux desktops (Debian 13+, Ubuntu 26.04+, Fedora 43+).
+
+Standard upstream Flameshot builds on modern Wayland desktops suffer from spinning busy cursors on capture launch/exit, missing drag-and-drop workflows for pinned screenshots, lack of integrated OCR, and clipboard data loss when short-lived GUI processes terminate. This edition resolves these challenges across all supported platforms while providing automated multi-platform GitHub Releases.
 
 ---
 
@@ -45,11 +47,34 @@ Standard upstream Flameshot builds on modern Wayland desktops suffer from spinni
 - **X11 Code Stripped**: Removed obsolete X11 legacy grabber fallback paths, window ID queries, and X11-only configuration switches (`useX11LegacyScreenshot`, `captureActiveMonitor`).
 - **Dual-Binary Architecture**: Runs an isolated background daemon (`flameshot-daemon`) to hold Wayland clipboard MIME data persistently, while `flameshot gui` acts as a fast, ephemeral portal client.
 
+### 📐 Dynamic Annotation Resize Handles
+- **Eight-Point & Endpoint Handles**: Selected rectangles, circles, inverts, and pixelate boxes display 8 perimeter handles; lines, arrows, and markers display endpoint handles; speech counter bubbles feature draggable pointer tips; pencil/freehand strokes scale cleanly across an 8-point bounding hull.
+- **Directional Cursor Feedback**: Hovering over handles dynamically adjusts the pointer cursor (`SizeHor`, `SizeVer`, `SizeFDiag`, `SizeBDiag`, `OpenHand`, `ClosedHand`).
+- **Undo / Delete Safety**: Drag operations cleanly disconnect if an annotation object is deleted or replaced mid-drag.
+
+### 🖥️ Native DPR Scaling & Pixel-Accurate Cropping (`dprscaling`)
+- **Native Pixel Preservation**: Captures preserve true physical display resolution on fractional scaling compositors (e.g., 125%, 150%, 175%), avoiding blurred interpolation.
+- **Edge-Based Pixel Mapping**: Selection rectangles map device pixel edges directly rather than extents, avoiding single-pixel gaps or boundary truncation.
+- **Unified Color Picker Alignment**: Eyedropper coordinates map accurately through monitor offsets and per-display DPR scaling across multi-monitor setups.
+
+### 📦 Automated Multi-Platform Packaging & Release Workflows
+- **GitHub Actions Automation**: Workflows for Linux Pure Wayland (`.deb` for Debian 13/Ubuntu 26.04, `.rpm` for Fedora 43/44), Windows (`.msi` installer, portable `.zip`), and macOS (`.dmg`) automatically build and attach release assets via `softprops/action-gh-release@v2` when a `v*` tag is pushed.
+
 ---
 
-## 3. Build & Installation (Ubuntu 26.04 LTS)
+## 3. Installation & Build Guide
 
-### Runtime Dependencies
+### Pre-built Releases
+Download ready-to-use binaries directly from our [GitHub Releases](https://github.com/sonnytf/flameshot/releases):
+- **Linux Pure Wayland**: `.deb` (Debian 13+, Ubuntu 26.04+), `.rpm` (Fedora 43+)
+- **Windows (x64)**: `.msi` Installer & Portable `.zip`
+- **macOS (Apple Silicon & Intel)**: `.dmg` Package
+
+---
+
+### Linux Wayland Build & Systemd Setup
+
+#### Runtime Dependencies
 Install the required system portal and OCR language packs:
 ```bash
 sudo apt-get update
@@ -60,7 +85,7 @@ sudo apt-get install -y \
     tesseract-ocr-eng
 ```
 
-### Docker Clean-Room Build
+#### Docker Clean-Room Build
 To build a reproducible `.deb` without polluting your host development environment:
 ```bash
 # From repository root
@@ -83,15 +108,15 @@ docker run --rm -v "$(pwd):/src" -w /src ubuntu:26.04 bash -c "
     -DUSE_WAYLAND_GRIM=OFF \
     -DENABLE_CACHE=OFF \
     -DUSE_KDSINGLEAPPLICATION=ON \
-    -DDISABLE_UPDATE_CHECKER=ON \
+    -DDISABLE_UPDATE_CHECKER=OFF \
     -DCPACK_GENERATOR=DEB
 
   cmake --build build -j\$(nproc)
-  cpack --config build/CPackConfig.cmake -B build
+  cpack -G DEB --config build/CPackConfig.cmake -B build
 "
 ```
 
-### Installing the `.deb` Package
+#### Installing the `.deb` Package
 ```bash
 sudo dpkg -i build/flameshot-*.deb
 ```

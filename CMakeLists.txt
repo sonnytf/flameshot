@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.22)
 # cmake_policy(SET CMP0076 OLD)
 
-set(FLAMESHOT_VERSION 15.0.0)
+set(FLAMESHOT_VERSION 15.1.0)
 
-# Flameshot-org
-set(GIT_API_URL "https://api.github.com/repos/flameshot-org/flameshot/releases/latest")
+# SonnyTF fork
+set(GIT_API_URL "https://api.github.com/repos/sonnytf/flameshot/releases/latest")
 
 project(
   flameshot
@@ -156,6 +156,12 @@ if(WIN32 OR APPLE)
 endif()
 
 add_subdirectory(src)
+
+option(FLAMESHOT_BUILD_TESTS "Build unit tests" OFF)
+if(FLAMESHOT_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
 
 # CPack
 set(CPACK_PACKAGE_VENDOR "flameshot-org")

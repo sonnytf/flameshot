@@ -11,11 +11,12 @@ Build-Depends:
  qt6-svg-dev (>= 6.2.4~) | libqt6svg6-dev (>= 6.2.4~),
  qt6-l10n-tools (>= 6.2.4~),
  libgl-dev,
+ libkf6guiaddons-dev,
 Rules-Requires-Root: no
 Standards-Version: 4.7.2
-Homepage: https://flameshot.org/
-Vcs-Browser: https://github.com/flameshot-org/flameshot
-Vcs-Git: https://github.com/flameshot-org/flameshot.git
+Homepage: https://github.com/sonnytf/flameshot
+Vcs-Browser: https://github.com/sonnytf/flameshot
+Vcs-Git: https://github.com/sonnytf/flameshot.git
 
 Package: flameshot
 Architecture: any
@@ -28,6 +29,8 @@ Depends:
  libstdc++6 (>= 11),
  hicolor-icon-theme,
  qt6-qpa-plugins (>= 6.2.4~),
+ qt6-wayland (>= 6.2.4~),
+ tesseract-ocr,
  libqt6core6 (>= 6.2.4~),
  libqt6dbus6 (>= 6.2.4~),
  libqt6gui6 (>= 6.2.4~),

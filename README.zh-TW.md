@@ -3,9 +3,9 @@
     <h1>
       <img src="data/img/app/org.flameshot.Flameshot.svg" alt="Flameshot" width="64" height="64" />
       <br />
-      Flameshot (Ubuntu 26.04+ Wayland 專用強化版)
+      Flameshot (跨平台強化版 & Wayland 深度優化版)
     </h1>
-    <h4>懸浮 [Drag Me] 拖曳貼圖、內建離線 OCR 工具列、純 Wayland 架構與零轉圈游標。</h4>
+    <h4>懸浮 [Drag Me] 拖曳貼圖、內建離線 OCR 工具列、標註調整控制點、DPR 像素級縮放、純 Wayland 架構與零轉圈游標。</h4>
     <p>
       <a href="./README.md">English</a> · <b>繁體中文</b>
     </p>
@@ -16,9 +16,11 @@
 
 ## 1. 專案概述 (Project Overview)
 
-本專案為針對 **Ubuntu 26.04 LTS (及更高版本) GNOME Wayland** 桌面深度優化的 **Flameshot** 定制版本。
+本專案為 **Flameshot** 的**跨平台（Windows、macOS 與 Linux 純 Wayland）**深度優化與生產力強化版本。
 
-在現代 Wayland 環境下，官方原生版本常遭遇截圖啟動與退出時的游標轉圈卡頓（Mutter 15 秒 Busy Cursor）、釘選貼圖無法直接拖曳至其他應用程式、缺乏原生 OCR 文字識別，以及截圖處理程序結束後 Wayland 剪貼簿資料立即遺失等痛點。本專案透過徹底剝離過時的 X11 舊式代碼，建構純粹的 Wayland 架構，並內建懸浮拖曳分享與離線 OCR 等高效率生產力功能。
+整合了標註動態調整控制點、懸浮 `[Drag Me]` 拖曳釘選分享、原生離線 `[OCR]` 工具列、高解析度多螢幕 DPR 像素級裁切，以及針對現代 Linux 桌面（Debian 13+、Ubuntu 26.04+、Fedora 43+）的純粹 Wayland 架構。
+
+在現代 Wayland 環境下，官方原生版本常遭遇截圖啟動與退出時的游標轉圈卡頓（Mutter 15 秒 Busy Cursor）、釘選貼圖無法直接拖曳至其他應用程式、缺乏原生 OCR 文字識別，以及截圖處理程序結束後 Wayland 剪貼簿資料立即遺失等痛點。本專案透過徹底剝離過時的 X11 舊式代碼，建構純粹的 Wayland 架構，並內建懸浮拖曳分享與離線 OCR 等高效率生產力功能，同時提供全平台自動化 GitHub Releases 發行。
 
 ---
 
@@ -45,11 +47,34 @@
 - **精簡 X11 遺留代碼**：全面移除舊式 X11 截圖截取、視窗 ID 檢索與專屬設定選項（`useX11LegacyScreenshot`、`captureActiveMonitor`）。
 - **雙二進制生命週期**：透過常駐背景守護行程（`flameshot-daemon`）持久保管 Wayland 剪貼簿 MIME 資料，`flameshot gui` 則作為輕量瞬時 Portal 客戶端運作。
 
+### 📐 標註圖案動態調整控制點 (Dynamic Resize Handles)
+- **八向與端點控制握把**：已選取的矩形、圓形、反色與馬賽克方塊顯示 8 個周邊調整點；直線、箭頭與螢光筆具備端點調整點；對話氣泡/序號計數器支援拖曳箭頭指標尖端；畫筆自由路徑支援外框 8 向等比例縮放。
+- **直覺方向游標反饋**：游標移至控制點時自動切換方向調整游標（`SizeHor`、`SizeVer`、`SizeFDiag`、`SizeBDiag`、`OpenHand`、`ClosedHand`）。
+- **復原與刪除安全機制**：在拖曳調整過程若物件被刪除或執行 Undo，立即安全取消拖曳行為，避免記憶體或座標異常。
+
+### 🖥️ 原生 DPR 縮放與像素級精確裁剪 (`dprscaling`)
+- **保留螢幕真實像素**：在分數縮放（如 125%、150%、175%）的合成器環境下，保留截圖原生解析度，防止模糊二次放大。
+- **邊緣對齊轉換演算法**：選區轉設備像素時直接縮放邊界座標（Edges）而非僅依長寬換算，避免 fractional ratio 下出現單像素偏差或邊界接縫。
+- **跨螢幕取色滴管對齊**：滴管取色工具完整校正多顯示器座標偏移與個別 DPR 比例，Wayland 多螢幕放大鏡取色完全精準。
+
+### 📦 自動化全平台打包與 GitHub Release 發行
+- **GitHub Actions 自動化**：支援 Linux Pure Wayland（Debian 13 / Ubuntu 26.04 的 `.deb`、Fedora 43 / 44 的 `.rpm`）、Windows（`.msi` 安裝檔、便攜版 `.zip`）與 macOS（`.dmg`），推送 `v*` 標籤時自動建構並透過 `softprops/action-gh-release@v2` 附加發行資產。
+
 ---
 
-## 3. 編譯與安裝指南 (Ubuntu 26.04 LTS)
+## 3. 安裝與編譯指南 (Installation & Build Guide)
 
-### 執行期依賴套件 (Runtime Dependencies)
+### 預編譯版本下載 (Pre-built Releases)
+直接從我們的 [GitHub Releases](https://github.com/sonnytf/flameshot/releases) 下載開箱即用的二進位安裝包：
+- **Linux Pure Wayland**：`.deb` (Debian 13+, Ubuntu 26.04+), `.rpm` (Fedora 43+)
+- **Windows (x64)**：`.msi` 安裝檔與免安裝便攜版 `.zip`
+- **macOS (Apple Silicon & Intel)**：`.dmg` 安裝映象檔
+
+---
+
+### Linux Wayland 本地編譯與 Systemd 常駐設定
+
+#### 執行期依賴套件 (Runtime Dependencies)
 安裝系統 Portal 代理與離線 OCR 語言包：
 ```bash
 sudo apt-get update
@@ -60,7 +85,7 @@ sudo apt-get install -y \
     tesseract-ocr-eng
 ```
 
-### Docker 無污染乾淨編譯 (Clean-Room Build)
+#### Docker 無污染乾淨編譯 (Clean-Room Build)
 於專案根目錄執行 Docker 一鍵打包 `.deb`：
 ```bash
 mkdir -p build
@@ -82,15 +107,15 @@ docker run --rm -v "$(pwd):/src" -w /src ubuntu:26.04 bash -c "
     -DUSE_WAYLAND_GRIM=OFF \
     -DENABLE_CACHE=OFF \
     -DUSE_KDSINGLEAPPLICATION=ON \
-    -DDISABLE_UPDATE_CHECKER=ON \
+    -DDISABLE_UPDATE_CHECKER=OFF \
     -DCPACK_GENERATOR=DEB
 
   cmake --build build -j\$(nproc)
-  cpack --config build/CPackConfig.cmake -B build
+  cpack -G DEB --config build/CPackConfig.cmake -B build
 "
 ```
 
-### 安裝 `.deb` 套件
+#### 安裝 `.deb` 套件
 ```bash
 sudo dpkg -i build/flameshot-*.deb
 ```

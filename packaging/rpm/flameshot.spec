@@ -1,10 +1,10 @@
 Name:    flameshot
-Version: 14.0.0
+Version: 15.1.0
 Release: 1%{?dist}
 Summary: Powerful yet simple to use screenshot software
 
 License: GPL-3.0-or-later
-URL:     https://github.com/flameshot-org/flameshot
+URL:     https://github.com/sonnytf/flameshot
 Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 Vendor:  Flameshot
 
@@ -40,14 +40,18 @@ BuildRequires:  kf6-kguiaddons-devel >= 6.7.0
 %endif
 
 Requires: hicolor-icon-theme
+Requires: tesseract
 
 %if 0%{?suse_version}
 Requires: qt6-svg
+Requires: qt6-wayland
 %else
 %if 0%{?fedora} || 0%{?rhel}
 Requires: qt6-qtsvg%{?_isa}
+Requires: qt6-qtwayland%{?_isa}
 %else
 Requires: qt6-svg%{?_isa}
+Requires: qt6-wayland%{?_isa}
 %endif
 %endif
 
