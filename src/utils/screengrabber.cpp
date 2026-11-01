@@ -199,12 +199,14 @@ QPixmap ScreenGrabber::selectMonitorAndCrop(const QPixmap& fullScreenshot,
 #if defined(Q_OS_MACOS)
     // Avoid showing additional top-level monitor selection UI on macOS
     // Only screenshot the monitor where the tray activated the screenshot
+    m_selectedMonitor = 0;
     return cropToMonitor(fullScreenshot, 0);
 #else
 
     // If there's only one monitor, skip selection
     const QList<QScreen*> screens = QGuiApplication::screens();
     if (screens.size() == 1) {
+        m_selectedMonitor = 0;
         return cropToMonitor(fullScreenshot, 0);
     }
 
